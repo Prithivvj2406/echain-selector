@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IGUS E-Chain Selector</title>
+<style>
+:root{
+  --bg:#F0EEE9;--surface:#FFFFFF;--surface2:#F7F6F2;--border:#DDDBD4;--border2:#C8C5BC;
+  --text:#1A1916;--text2:#5A574F;--text3:#9B9890;
+  --accent:#1B4F8A;--accent-bg:#EBF1FA;--accent-lt:#4A7EC7;
+  --success:#1A6B3C;--success-bg:#E8F5EE;
+  --warn:#7A4A00;--warn-bg:#FFF4E0;
+  --danger:#8B1A1A;--danger-bg:#FAEBEB;
+  --radius:8px;--shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 12px rgba(0,0,0,0.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+code{font-family:'Consolas','Courier New',monospace;font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:3px;border:1px solid var(--border)}
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.main{padding:2rem;max-width:960px}
+.brand{padding:1.5rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
+.brand-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand-icon{width:34px;height:34px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.brand-icon svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.brand-name{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.2px}
+.brand-sub{font-size:11px;color:var(--text3)}
+.project-field{padding:.75rem 1.25rem;border-bottom:1px solid var(--border)}
+.project-field label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);display:block;margin-bottom:5px}
+.project-field input{width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);color:var(--text)}
+.nav{padding:.75rem 0;flex:1;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 1.25rem;cursor:pointer;color:var(--text2);font-size:13px;transition:background .12s;border-left:2px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent);border-left-color:var(--accent);font-weight:500}
+.nav-dot{width:22px;height:22px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--text3);flex-shrink:0}
+.nav-item.active .nav-dot{background:var(--accent);color:#fff}
+.sidebar-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.btn-save{width:100%;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-save:hover{background:#153E6E}
+.btn-load{width:100%;padding:8px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-load:hover{background:var(--surface);color:var(--text)}
+.page{display:none}
+.page.active{display:block}
+.page-header{margin-bottom:1.75rem}
+.page-header h1{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.3px;margin-bottom:4px}
+.page-header p{font-size:13px;color:var(--text2);line-height:1.5}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:7px}
+.card-title svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;font-weight:500;color:var(--text2)}
+.field input,.field select{padding:7px 9px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);color:var(--text);transition:border .12s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent-lt);background:var(--surface)}
+.field .hint{font-size:11px;color:var(--text3)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* Element table */
+.el-wrap{overflow-x:auto}
+.el-table{width:100%;border-collapse:collapse;min-width:720px}
+.el-table th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:0 6px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.el-table td{padding:4px 3px;border-bottom:1px solid var(--border);vertical-align:middle}
+.el-table tr:last-child td{border-bottom:none}
+.el-table input[type=text],.el-table input[type=number]{padding:5px 6px;font-size:12px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text);width:100%}
+.el-table input:focus{outline:none;border-color:var(--accent-lt)}
+.el-table select{padding:5px 4px;font-size:12px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text);width:100%}
+.el-table select:focus{outline:none;border-color:var(--accent-lt)}
+.color-swatch{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);cursor:pointer;flex-shrink:0;display:block}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:.4px}
+.badge-known{background:#D1FAE5;color:#065F46}
+.badge-unknown{background:#FEF3C7;color:#92400E}
+.btn-icon{background:none;border:1px solid var(--border);border-radius:5px;padding:4px 8px;cursor:pointer;color:var(--text3);display:inline-flex;align-items:center;font-size:12px}
+.btn-icon:hover{border-color:var(--danger);color:var(--danger)}
+.btn-add{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text2);cursor:pointer;font-weight:500}
+.btn-add:hover{background:var(--surface);border-color:var(--border2);color:var(--text)}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:500;cursor:pointer}
+.btn-primary:hover{background:#153E6E}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:var(--radius);font-size:14px;cursor:pointer}
+.btn-secondary:hover{background:var(--surface2);color:var(--text)}
+.eff-cell{font-size:11px;color:var(--text3);text-align:right;padding-right:2px;white-space:nowrap}
+.br-cell{font-size:11px;color:var(--accent);text-align:right;padding-right:2px;white-space:nowrap;font-weight:500}
+
+/* Upload */
+.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all .15s;color:var(--text3)}
+.upload-zone:hover{border-color:var(--accent-lt);background:var(--accent-bg);color:var(--accent)}
+.upload-zone svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.5;margin-bottom:.5rem;display:block;margin-left:auto;margin-right:auto}
+.csv-table-wrap{overflow-x:auto;max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px}
+.csv-table{width:100%;border-collapse:collapse;font-size:12px}
+.csv-table th{background:var(--surface2);padding:7px 10px;text-align:left;font-weight:600;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);position:sticky;top:0}
+.csv-table td{padding:6px 10px;border-bottom:1px solid var(--border)}
+.csv-table tr:last-child td{border-bottom:none}
+.csv-table tr:hover td{background:var(--surface2)}
+
+/* Results */
+.result-chain-name{font-size:28px;font-weight:700;color:var(--accent);letter-spacing:-.5px}
+.status-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px}
+.status-ok{background:var(--success-bg);color:var(--success)}
+.status-warn{background:var(--warn-bg);color:var(--warn)}
+.status-err{background:var(--danger-bg);color:var(--danger)}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.metric-card{background:var(--surface2);border-radius:8px;padding:.9rem;text-align:center;border:1px solid var(--border)}
+.metric-val{font-size:20px;font-weight:600;color:var(--text);margin-bottom:2px}
+.metric-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.fill-bar-wrap{margin-bottom:1.25rem}
+.fill-bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:5px}
+.fill-bar-bg{height:10px;background:var(--surface2);border-radius:5px;border:1px solid var(--border);overflow:hidden}
+.fill-bar-fg{height:100%;border-radius:5px;transition:width .5s ease;background:var(--accent)}
+.fill-bar-fg.warn{background:#D4870A}
+.fill-bar-fg.danger{background:#C0392B}
+.top3-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:1rem}
+.rank-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;cursor:pointer;transition:all .12s}
+.rank-card:hover{border-color:var(--accent-lt);box-shadow:0 0 0 3px var(--accent-bg)}
+.rank-card.selected{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.rank-card.rank-1{border-top:3px solid var(--accent)}
+.rank-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem}
+.rank-1 .rank-badge{color:var(--accent)}
+.rank-2 .rank-badge,.rank-3 .rank-badge{color:var(--text3)}
+.rank-series{font-size:16px;font-weight:600;color:var(--text);margin-bottom:.4rem}
+.rank-dims{font-size:12px;color:var(--text2);margin-bottom:.5rem}
+.rank-fill{font-size:12px;font-weight:500}
+.canvas-wrap{position:relative;overflow:auto;border-radius:8px;border:1px solid var(--border);background:#FAFAF8;max-height:520px}
+.canvas-controls{display:flex;gap:6px;margin-bottom:.6rem;align-items:center;flex-wrap:wrap}
+.canvas-controls button{padding:5px 10px;font-size:12px;border:1px solid var(--border);border-radius:5px;background:var(--surface);cursor:pointer;color:var(--text2)}
+.canvas-controls button:hover{background:var(--surface2)}
+.canvas-controls button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.zoom-label{font-size:12px;color:var(--text3);margin-left:2px}
+.legend{display:flex;gap:14px;margin-top:.75rem;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.legend-dot{width:12px;height:12px;border-radius:50%}
+.alert{padding:.75rem 1rem;border-radius:var(--radius);font-size:13px;margin-bottom:1rem;display:flex;align-items:flex-start;gap:8px}
+.alert-warn{background:var(--warn-bg);color:var(--warn);border:1px solid #F5C47A}
+.alert-err{background:var(--danger-bg);color:var(--danger);border:1px solid #F0A0A0}
+.alert-ok{background:var(--success-bg);color:var(--success);border:1px solid #7ECBA1}
+.alert svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;margin-top:1px}
+.igus-link{display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-size:13px;text-decoration:none;font-weight:500}
+.igus-link:hover{text-decoration:underline}
+.flex{display:flex;align-items:center;gap:8px}
+.between{justify-content:space-between}
+.mt1{margin-top:.75rem}.mt2{margin-top:1.25rem}
+.dimtag{display:inline-block;font-size:11px;background:var(--accent-bg);color:var(--accent);padding:3px 8px;border-radius:4px;font-weight:500}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:.5rem}
+.format-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:.75rem}
+.format-box pre{font-size:12px;color:var(--text2);line-height:1.7;overflow-x:auto;white-space:pre}
+.br-warn-row{background:#FFF8E6 !important}
+.br-warn-row td{color:var(--warn)}
+
+/* Chain data layout */
+.chains-layout{display:grid;grid-template-columns:1fr 260px;gap:1rem;align-items:start}
+.chains-side{position:sticky;top:2rem}
+.series-pref-list{display:flex;flex-direction:column;gap:6px}
+.series-pref-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:grab;font-size:13px;font-weight:500;color:var(--text);user-select:none;transition:background .1s,box-shadow .1s}
+.series-pref-item:active{cursor:grabbing}
+.series-pref-item.dragging{opacity:.4}
+.series-pref-item.drag-over{border-color:var(--accent-lt);box-shadow:0 0 0 2px var(--accent-bg)}
+.series-pref-rank{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.series-pref-handle{color:var(--text3);flex-shrink:0;display:flex}
+.series-pref-handle svg{width:14px;height:14px}
+@media (max-width:900px){.chains-layout{grid-template-columns:1fr}.chains-side{position:static}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><line x1="12" y1="7" x2="12" y2="17"/><circle cx="7.5" cy="12" r="2"/><circle cx="16.5" cy="12" r="2"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">E-Chain Selector</div>
+        <div class="brand-sub">Powered by IGUS data</div>
+      </div>
+    </div>
+  </div>
+  <div class="project-field">
+    <label>Project name</label>
+    <input type="text" id="projectName" placeholder="e.g. Robot Arm Rev2" oninput="markDirty()">
+  </div>
+  <div class="project-field">
+    <label>Customer</label>
+    <input type="text" id="projectCustomer" placeholder="e.g. Acme Corp" oninput="markDirty()">
+  </div>
+  <div class="project-field">
+    <label>Machine name</label>
+    <input type="text" id="projectMachine" placeholder="e.g. Gantry Line 3" oninput="markDirty()">
+  </div>
+  <div class="project-field">
+    <label>Engineer</label>
+    <input type="text" id="projectEngineer" placeholder="Your name" oninput="markDirty()">
+  </div>
+  <div class="project-field">
+    <label>Date</label>
+    <input type="date" id="projectDate" oninput="markDirty()">
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" id="nav-elements" onclick="goTo('elements')"><div class="nav-dot" id="dot-elements">1</div> Elements</div>
+    <div class="nav-item" id="nav-settings" onclick="goTo('settings')"><div class="nav-dot" id="dot-settings">2</div> Settings</div>
+    <div class="nav-item" id="nav-chains" onclick="goTo('chains')"><div class="nav-dot" id="dot-chains">3</div> Chain data</div>
+    <div class="nav-item" id="nav-result" onclick="goTo('result')"><div class="nav-dot" id="dot-result">4</div> Results & layout</div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="btn-save" onclick="saveProject()">
+      <svg style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save project
+    </button>
+    <button class="btn-load" onclick="loadProject()">
+      <svg style="width:14px;height:14px;stroke:var(--text2);fill:none;stroke-width:2;stroke-linecap:round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Load project
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- PAGE 1: Elements -->
+<div id="page-elements" class="page active">
+  <div class="page-header">
+    <h1>Define elements</h1>
+    <p>Add every hose and cable. Set OD, quantity, colour and bend radius per element. Select <strong>Known</strong> to enter an exact bend radius, or <strong>Unknown</strong> to auto-calculate as 10 × OD.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      Pneumatic hoses
+    </div>
+    <div class="el-wrap">
+      <table class="el-table" id="hose-table">
+        <thead><tr>
+          <th style="width:28px">Col</th>
+          <th style="min-width:110px">Name</th>
+          <th style="width:78px">OD (mm)</th>
+          <th style="width:55px">Qty</th>
+          <th style="width:100px">BR status</th>
+          <th style="width:90px">BR (mm)</th>
+          <th style="width:72px">Eff. OD</th>
+          <th style="width:72px">Used BR</th>
+          <th style="width:32px"></th>
+        </tr></thead>
+        <tbody id="hose-body"></tbody>
+      </table>
+    </div>
+    <button class="btn-add mt1" onclick="addEl('hose')">＋ Add hose</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      Electrical cables
+    </div>
+    <div class="el-wrap">
+      <table class="el-table" id="cable-table">
+        <thead><tr>
+          <th style="width:28px">Col</th>
+          <th style="min-width:110px">Name</th>
+          <th style="width:78px">OD (mm)</th>
+          <th style="width:55px">Qty</th>
+          <th style="width:100px">BR status</th>
+          <th style="width:90px">BR (mm)</th>
+          <th style="width:72px">Eff. OD</th>
+          <th style="width:72px">Used BR</th>
+          <th style="width:32px"></th>
+        </tr></thead>
+        <tbody id="cable-body"></tbody>
+      </table>
+    </div>
+    <button class="btn-add mt1" onclick="addEl('cable')">＋ Add cable</button>
+  </div>
+
+  <div class="card" style="background:var(--accent-bg);border-color:#C3D8F0">
+    <div style="font-size:12px;color:var(--accent);line-height:1.6">
+      <strong>Bend radius guide:</strong> &nbsp;
+      <span class="badge badge-known">Known</span> — you provide the manufacturer's minimum bend radius. &nbsp;
+      <span class="badge badge-unknown">Unknown</span> — app uses 10 × OD as a safe default. &nbsp;
+      The chain selected will have a bend radius ≥ the largest BR across all elements.
+    </div>
+  </div>
+
+  <div class="flex between mt1">
+    <div></div>
+    <button class="btn-primary" onclick="goTo('settings')">Next: Settings →</button>
+  </div>
+</div>
+
+<!-- PAGE 2: Settings -->
+<div id="page-settings" class="page">
+  <div class="page-header">
+    <h1>Selection settings</h1>
+    <p>Configure annular separation, fill limits and travel length.</p>
+  </div>
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg>Annular separation</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Hose gap (%)</label>
+        <input type="number" id="hoseGap" value="10" min="0" max="100" step="1" oninput="renderTables()">
+        <span class="hint">Clearance ring = % of each hose OD</span>
+      </div>
+      <div class="field">
+        <label>Cable gap (%)</label>
+        <input type="number" id="cableGap" value="10" min="0" max="100" step="1" oninput="renderTables()">
+        <span class="hint">Clearance ring = % of each cable OD</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Fill limits</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Recommended fill max (%)</label>
+        <input type="number" id="fillWarn" value="60" min="10" max="90" step="1">
+        <span class="hint">Warn if cable fill exceeds this</span>
+      </div>
+      <div class="field">
+        <label>Absolute fill max (%)</label>
+        <input type="number" id="fillMax" value="80" min="10" max="100" step="1">
+        <span class="hint">Reject chains below this threshold</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><path d="M5 12h14M5 12l4-4M5 12l4 4"/></svg>Sizing preference</div>
+    <div class="field" style="flex-direction:row;align-items:center;gap:10px;margin-bottom:4px">
+      <input type="checkbox" id="preferNarrow" style="width:16px;height:16px" onchange="markDirty()">
+      <label for="preferNarrow" style="margin:0;font-size:13px;font-weight:500;color:var(--text)">Prefer narrower width chains</label>
+    </div>
+    <span class="hint">When on, chains are ranked by inner width first (smallest wins), then by cavity area. A narrower-but-taller chain will be preferred over a wider-but-shorter one of similar or even larger overall area. Leave off to rank purely by smallest cavity area.</span>
+  </div>
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9"/><path d="M12 3v9l4 4"/></svg>Travel</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Travel length (mm) <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+        <input type="number" id="travel" value="" min="0" step="1" placeholder="e.g. 1500">
+        <span class="hint">Used for chain length estimate</span>
+      </div>
+    </div>
+  </div>
+  <div class="flex between mt1">
+    <button class="btn-secondary" onclick="goTo('elements')">← Back</button>
+    <button class="btn-primary" onclick="goTo('chains')">Next: Chain data →</button>
+  </div>
+</div>
+
+<!-- PAGE 3: Chain data -->
+<div id="page-chains" class="page">
+  <div class="page-header">
+    <h1>Chain data</h1>
+    <p>Upload your IGUS catalogue CSV or load the built-in starter set. The app will filter chains so their bend radius is ≥ the largest bend radius across all elements.</p>
+  </div>
+  <div class="chains-layout">
+  <div class="chains-main">
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Required CSV / Excel format</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:.5rem">First row must be exactly these column headers (works for .csv, .xlsx, and .xls):</p>
+    <div class="format-box">
+      <pre>series,inner_width_mm,inner_height_mm,bend_radius_mm,url
+E4.32.050.0,50,32,48,https://www.igus.com/...
+E4.32.075.0,75,32,48,https://www.igus.com/...
+E4.56.100.0,100,56,75,https://www.igus.com/...</pre>
+    </div>
+    <div style="margin-top:.75rem;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:var(--text3)">
+      <div><strong style="color:var(--text2)">series</strong> — IGUS part series name</div>
+      <div><strong style="color:var(--text2)">inner_width_mm</strong> — cavity width (Bi in IGUS drawings)</div>
+      <div><strong style="color:var(--text2)">inner_height_mm</strong> — cavity height (Hi in IGUS drawings)</div>
+      <div><strong style="color:var(--text2)">bend_radius_mm</strong> — chain minimum bend radius</div>
+      <div><strong style="color:var(--text2)">url</strong> — product page link (optional, can be blank)</div>
+    </div>
+    <button class="btn-secondary mt1" onclick="downloadExcelTemplate()" style="margin-top:.75rem">⬇ Download Excel reference template (.xlsx)</button>
+  </div>
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>Upload CSV or Excel</div>
+    <div class="upload-zone" onclick="document.getElementById('csvFile').click()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <div style="font-size:14px;font-weight:500;margin-bottom:3px">Click to upload CSV or Excel file</div>
+      <div style="font-size:12px">.csv, .xlsx, or .xls — same column format as the template below</div>
+    </div>
+    <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="loadCSV(event)">
+    <div style="display:flex;align-items:center;gap:10px;margin:1rem 0">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:12px;color:var(--text3)">or</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+    <button class="btn-secondary" style="width:100%;justify-content:center" onclick="loadDefaults()">Load built-in IGUS starter data</button>
+  </div>
+  <div class="card" id="chain-preview-card" style="display:none">
+    <div class="card-title" style="margin-bottom:.75rem"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span id="chain-count-label">Chains loaded</span></div>
+    <div class="csv-table-wrap"><table class="csv-table" id="chain-preview-table"></table></div>
+  </div>
+  <div class="flex between mt1">
+    <button class="btn-secondary" onclick="goTo('settings')">← Back</button>
+    <button class="btn-primary" onclick="runSelection()">Calculate selection →</button>
+  </div>
+  </div>
+  <div class="chains-side">
+    <div class="card" id="series-pref-card" style="display:none">
+      <div class="card-title"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>Series preference order</div>
+      <p style="font-size:11.5px;color:var(--text2);margin-bottom:.6rem;line-height:1.5">Drag to set which IGUS series to prefer first when multiple chains fit equally well. Top of the list wins ties.</p>
+      <div id="series-pref-list" class="series-pref-list"></div>
+      <div class="hint" style="margin-top:.6rem">Detected from text before the first "." in each series name.</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- PAGE 4: Results -->
+<div id="page-result" class="page">
+  <div class="page-header">
+    <h1>Selection result</h1>
+    <p>Best-fit chain shown first. Click any option to update the cross-section view.</p>
+  </div>
+  <div id="result-content"></div>
+</div>
+
+</main>
+</div>
+
+<script>
+/* ═══ STATE ═══ */
+let elId=0, hoses=[], cables=[], chains=[];
+let dirty=false, selectedRankIdx=0, topResults=[], zoom=1.0;
+let rbSelecting=false, rbStartX=0, rbStartY=0, rbEndX=0, rbEndY=0;
+let seriesPrefOrder=[];
+const SEPARATOR_WEB_MM=3;  // separator web width (mm)
+const SEPARATOR_FOOT_LEN_MM=8; // separator foot length at top (mm) — widest point, used to reserve packing clearance
+const SEPARATOR_CLEAR_MM=Math.max(SEPARATOR_WEB_MM,SEPARATOR_FOOT_LEN_MM);
+const HOSE_COLORS=['#2563EB','#0891B2','#7C3AED','#059669','#DC2626','#9333EA','#0D9488','#1D4ED8'];
+const CABLE_COLORS=['#B45309','#92400E','#D97706','#78350F','#A16207','#CA8A04','#713F12','#854D0E'];
+
+/* ═══ NAV ═══ */
+function goTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+page).classList.add('active');
+  if(page==='elements') renderTables();
+}
+function markDirty(){dirty=true;}
+
+/* ═══ ELEMENTS ═══ */
+function addEl(type){
+  const id=++elId;
+  const arr=type==='hose'?hoses:cables;
+  const colors=type==='hose'?HOSE_COLORS:CABLE_COLORS;
+  arr.push({id,type,name:(type==='hose'?'Hose ':'Cable ')+id,od:type==='hose'?12:8,qty:1,color:colors[arr.length%colors.length],brStatus:'Unknown',br:0});
+  renderTables();markDirty();
+}
+function removeEl(id){hoses=hoses.filter(x=>x.id!==id);cables=cables.filter(x=>x.id!==id);renderTables();markDirty();}
+function updateEl(id,field,val){
+  const el=[...hoses,...cables].find(x=>x.id===id);
+  if(!el)return;
+  if(field==='od'||field==='qty'||field==='br'){
+    const n=parseFloat(val);
+    el[field]=isNaN(n)?0:n;
+  } else {
+    el[field]=val;
+  }
+  markDirty();
+  if(field==='brStatus'){renderTables();return;}
+  refreshRowDerived(el);
+}
+function refreshRowDerived(el){
+  const row=document.querySelector(`tr[data-id="${el.id}"]`);
+  const gap=+(document.getElementById(el.type==='hose'?'hoseGap':'cableGap')?.value||10);
+  const effOD=(el.od*(1+gap/100)).toFixed(1);
+  const usedBR=effectiveBR(el);
+  const brIsAuto=el.brStatus==='Unknown';
+  if(!row)return;
+  const effCell=row.querySelector('.eff-cell');
+  const brCell=row.querySelector('.br-cell');
+  if(effCell)effCell.textContent=effOD+' mm';
+  if(brCell)brCell.innerHTML=`${usedBR.toFixed(0)} mm${brIsAuto?' <span style="font-size:9px;color:var(--text3)">(10×OD)</span>':''}`;
+}
+function updateColor(id,color){
+  const el=[...hoses,...cables].find(x=>x.id===id);
+  if(el)el.color=color;markDirty();
+}
+
+function effectiveBR(el){
+  if(el.brStatus==='Known') return el.br>0?el.br:el.od*10;
+  return el.od*10;
+}
+
+function renderTables(){
+  const hGap=+(document.getElementById('hoseGap')?.value||10);
+  const cGap=+(document.getElementById('cableGap')?.value||10);
+  ['hose','cable'].forEach(type=>{
+    const arr=type==='hose'?hoses:cables;
+    const gap=type==='hose'?hGap:cGap;
+    const tbody=document.getElementById(type+'-body');
+    if(!tbody)return;
+    if(arr.length===0){
+      tbody.innerHTML=`<tr><td colspan="9" style="padding:1.5rem;text-align:center;color:var(--text3);font-size:13px">No ${type}s added yet</td></tr>`;
+      return;
+    }
+    tbody.innerHTML=arr.map(el=>{
+      const effOD=(el.od*(1+gap/100)).toFixed(1);
+      const usedBR=effectiveBR(el);
+      const brIsAuto=el.brStatus==='Unknown';
+      const brInputDisabled=brIsAuto?'disabled style="opacity:.4;pointer-events:none"':'';
+      return `<tr data-id="${el.id}">
+        <td><input type="color" class="color-swatch" value="${el.color}" title="Pick colour" oninput="updateColor(${el.id},this.value)"></td>
+        <td><input type="text" value="${el.name}" oninput="updateEl(${el.id},'name',this.value)" style="min-width:100px"></td>
+        <td><input type="number" value="${el.od}" min="1" max="300" step="0.1" oninput="updateEl(${el.id},'od',this.value)"></td>
+        <td><input type="number" value="${el.qty}" min="1" max="99" step="1" oninput="updateEl(${el.id},'qty',this.value)"></td>
+        <td>
+          <select onchange="updateEl(${el.id},'brStatus',this.value)">
+            <option value="Unknown" ${el.brStatus==='Unknown'?'selected':''}>Unknown</option>
+            <option value="Known" ${el.brStatus==='Known'?'selected':''}>Known</option>
+          </select>
+        </td>
+        <td><input type="number" value="${el.br}" min="0" max="9999" step="1" ${brInputDisabled} oninput="updateEl(${el.id},'br',this.value)" placeholder="${brIsAuto?'auto':'enter mm'}"></td>
+        <td class="eff-cell">${effOD} mm</td>
+        <td class="br-cell">${usedBR.toFixed(0)} mm${brIsAuto?' <span style="font-size:9px;color:var(--text3)">(10×OD)</span>':''}</td>
+        <td><button class="btn-icon" onclick="removeEl(${el.id})" title="Remove">✕</button></td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+function downloadExcelTemplate(){
+  const b64="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";
+  const byteChars=atob(b64);
+  const byteNumbers=new Array(byteChars.length);
+  for(let i=0;i<byteChars.length;i++)byteNumbers[i]=byteChars.charCodeAt(i);
+  const byteArray=new Uint8Array(byteNumbers);
+  const blob=new Blob([byteArray],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a');
+  a.download='igus_chain_data_template.xlsx';
+  a.href=URL.createObjectURL(blob);a.click();
+}
+
+/* ═══ CSV ═══ */
+function loadCSV(e){
+  const file=e.target.files[0];if(!file)return;
+  const name=file.name.toLowerCase();
+  if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+    if(typeof XLSX==='undefined'){alert('Excel support failed to load (no internet connection). Please save the file as CSV and try again, or reconnect and retry.');return;}
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array'});
+        const sheet=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(sheet,{header:1,raw:true,defval:''});
+        parseRows(rows);
+      }catch(err){alert('Could not read Excel file: '+err.message);}
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const lines=ev.target.result.trim().split('\n').filter(l=>l.trim());
+      const rows=lines.map(line=>line.split(',').map(s=>s.trim()));
+      parseRows(rows);
+    };
+    reader.readAsText(file);
+  }
+}
+function parseRows(rows){
+  if(!rows||rows.length<2){alert('File has no data rows.');return;}
+  const headers=rows[0].map(s=>String(s||'').trim().toLowerCase());
+  chains=[];
+  for(let i=1;i<rows.length;i++){
+    const cols=rows[i];
+    if(!cols||cols.every(c=>String(c||'').trim()==='' ))continue;
+    const row={};headers.forEach((h,j)=>row[h]=cols[j]!==undefined?String(cols[j]).trim():'');
+    const iw=+(row['inner_width_mm']||row['width']||0);
+    const ih=+(row['inner_height_mm']||row['height']||0);
+    const br=+(row['bend_radius_mm']||row['bend_radius']||0);
+    if(iw>0&&ih>0)chains.push({series:row['series']||'Unknown',iw,ih,br,url:row['url']||''});
+  }
+  if(chains.length===0){alert('No valid chain rows found. Check that the column headers match the required format.');return;}
+  renderChainPreview();
+}
+function loadDefaults(){
+  chains=[
+    {series:'E2/000.075.0',iw:28,ih:28,br:28,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E2/000.100.0',iw:38,ih:38,br:38,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E2/000.125.0',iw:50,ih:50,br:50,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E2.1.025.0',iw:25,ih:25,br:28,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E2.1.038.0',iw:38,ih:25,br:28,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E2.1.050.0',iw:50,ih:25,br:28,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.28.025.0',iw:25,ih:28,br:38,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.28.038.0',iw:38,ih:28,br:38,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.28.050.0',iw:50,ih:28,br:38,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.32.025.0',iw:25,ih:32,br:48,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.32.038.0',iw:38,ih:32,br:48,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.32.050.0',iw:50,ih:32,br:48,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.32.075.0',iw:75,ih:32,br:48,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.32.100.0',iw:100,ih:32,br:48,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.56.050.0',iw:50,ih:56,br:75,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.56.075.0',iw:75,ih:56,br:75,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.56.100.0',iw:100,ih:56,br:75,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E4.56.150.0',iw:150,ih:56,br:75,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E6.45.075.0',iw:75,ih:45,br:90,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E6.45.100.0',iw:100,ih:45,br:90,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E6.45.125.0',iw:125,ih:45,br:90,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E6.45.150.0',iw:150,ih:45,br:90,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E6.45.200.0',iw:200,ih:45,br:90,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E6.60.075.0',iw:75,ih:60,br:100,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E6.60.100.0',iw:100,ih:60,br:100,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E6.60.150.0',iw:150,ih:60,br:100,url:'https://www.igus.com/e-chain/energy-chains'},
+    {series:'E6.60.200.0',iw:200,ih:60,br:100,url:'https://www.igus.com/e-chain/energy-chains'},
+  ];
+  renderChainPreview();
+}
+function renderChainPreview(){
+  const card=document.getElementById('chain-preview-card');
+  const tbl=document.getElementById('chain-preview-table');
+  card.style.display='';
+  document.getElementById('chain-count-label').textContent=chains.length+' chains loaded';
+  tbl.innerHTML=`<thead><tr><th>Series</th><th>Inner W (mm)</th><th>Inner H (mm)</th><th>Chain BR (mm)</th><th>Area (mm²)</th></tr></thead>
+  <tbody>${chains.map(c=>`<tr><td style="font-weight:500">${c.series}</td><td>${c.iw}</td><td>${c.ih}</td><td>${c.br}</td><td>${(c.iw*c.ih).toLocaleString()}</td></tr>`).join('')}</tbody>`;
+  buildSeriesPreference();
+}
+
+/* ═══ SERIES PREFERENCE ═══ */
+function seriesPrefix(series){
+  if(!series)return 'Unknown';
+  const idx=series.indexOf('.');
+  return idx===-1?series:series.slice(0,idx);
+}
+function buildSeriesPreference(){
+  const prefixes=[...new Set(chains.map(c=>seriesPrefix(c.series)))];
+  // Preserve existing order for prefixes still present, append new ones
+  const existing=seriesPrefOrder.filter(p=>prefixes.includes(p));
+  const added=prefixes.filter(p=>!existing.includes(p));
+  seriesPrefOrder=[...existing,...added];
+  renderSeriesPreference();
+}
+function renderSeriesPreference(){
+  const card=document.getElementById('series-pref-card');
+  const list=document.getElementById('series-pref-list');
+  if(seriesPrefOrder.length===0){card.style.display='none';return;}
+  card.style.display='';
+  list.innerHTML=seriesPrefOrder.map((p,i)=>`
+    <div class="series-pref-item" draggable="true" data-prefix="${p}" ondragstart="spDragStart(event)" ondragover="spDragOver(event)" ondragleave="spDragLeave(event)" ondrop="spDrop(event)" ondragend="spDragEnd(event)">
+      <span class="series-pref-rank">${i+1}</span>
+      <span class="series-pref-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg></span>
+      <span style="flex:1">${p}</span>
+    </div>`).join('');
+}
+let spDragEl=null;
+function spDragStart(e){spDragEl=e.currentTarget;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function spDragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function spDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function spDragEnd(e){document.querySelectorAll('.series-pref-item').forEach(el=>el.classList.remove('dragging','drag-over'));}
+function spDrop(e){
+  e.preventDefault();
+  const target=e.currentTarget;
+  target.classList.remove('drag-over');
+  if(!spDragEl||spDragEl===target)return;
+  const fromPrefix=spDragEl.dataset.prefix;
+  const toPrefix=target.dataset.prefix;
+  const fromIdx=seriesPrefOrder.indexOf(fromPrefix);
+  const toIdx=seriesPrefOrder.indexOf(toPrefix);
+  if(fromIdx===-1||toIdx===-1)return;
+  seriesPrefOrder.splice(fromIdx,1);
+  seriesPrefOrder.splice(toIdx,0,fromPrefix);
+  renderSeriesPreference();
+  markDirty();
+}
+
+/* ═══ PACKING ═══ */
+function expandItems(arr,gap){
+  const out=[];
+  arr.forEach(el=>{for(let i=0;i<(el.qty||1);i++)out.push({...el,effOD:el.od*(1+gap/100),usedBR:effectiveBR(el)});});
+  return out;
+}
+function packCircles(items,zoneW,zoneH){
+  if(items.length===0)return[];
+  const sorted=[...items].sort((a,b)=>b.effOD-a.effOD);
+  const placed=[];let x=0,y=0,rowH=0;
+  for(const el of sorted){
+    const d=el.effOD;
+    if(d>zoneW)return null;
+    if(x+d>zoneW){y+=rowH;x=0;rowH=0;}
+    if(y+d>zoneH)return null;
+    placed.push({...el,cx:x+d/2,cy:y+d/2});
+    x+=d;rowH=Math.max(rowH,d);
+  }
+  return placed;
+}
+
+/* ═══ SELECTION ═══ */
+function runSelection(){
+  if(hoses.length===0&&cables.length===0){alert('Add at least one hose or cable first.');return;}
+  if(chains.length===0){alert('Load chain data first.');return;}
+  const hGap=+(document.getElementById('hoseGap').value||10);
+  const cGap=+(document.getElementById('cableGap').value||10);
+  const hoseFlatItems=expandItems(hoses,hGap);
+  const cableFlatItems=expandItems(cables,cGap);
+  const allItems=[...hoseFlatItems,...cableFlatItems];
+  const maxElementBR=allItems.length>0?Math.max(...allItems.map(x=>x.usedBR)):0;
+  const totalCoreArea=allItems.reduce((s,el)=>s+Math.PI*(el.od/2)**2,0);
+  const fillWarn=+(document.getElementById('fillWarn').value||60);
+  const fillMax=+(document.getElementById('fillMax').value||80);
+
+  const preferNarrow=document.getElementById('preferNarrow')?.checked;
+
+  const validChains=chains
+    .filter(c=>c.br>=maxElementBR)
+    .sort((a,b)=>{
+      // 1. Series prefix preference order (lower index = more preferred)
+      const pa=seriesPrefOrder.indexOf(seriesPrefix(a.series));
+      const pb=seriesPrefOrder.indexOf(seriesPrefix(b.series));
+      const rankA=pa===-1?seriesPrefOrder.length:pa;
+      const rankB=pb===-1?seriesPrefOrder.length:pb;
+      if(rankA!==rankB)return rankA-rankB;
+      // 2. Width/area preference
+      if(preferNarrow){
+        if(a.iw!==b.iw)return a.iw-b.iw;
+        return a.iw*a.ih-b.iw*b.ih;
+      }
+      return a.iw*a.ih-b.iw*b.ih;
+    });
+
+  topResults=[];
+  for(const ch of validChains){
+    const halfW=Math.floor((ch.iw-SEPARATOR_CLEAR_MM)/2);
+    const pH=packCircles(hoseFlatItems,halfW,ch.ih);
+    const pC=packCircles(cableFlatItems,halfW,ch.ih);
+    if((hoseFlatItems.length===0||pH)&&(cableFlatItems.length===0||pC)){
+      const fillPct=totalCoreArea/(ch.iw*ch.ih)*100;
+      if(fillPct<=fillMax){
+        topResults.push({chain:ch,placedHoses:pH||[],placedCables:pC||[],fillPct,halfW,hoseFlatItems,cableFlatItems,maxElementBR});
+        if(topResults.length>=3)break;
+      }
+    }
+  }
+  selectedRankIdx=0;zoom=1.0;
+  goTo('result');
+  renderResult();
+}
+
+/* ═══ RESULT ═══ */
+function renderResult(){
+  const fillWarn=+(document.getElementById('fillWarn')?.value||60);
+  const fillMax=+(document.getElementById('fillMax')?.value||80);
+  const travel=+(document.getElementById('travel')?.value||0);
+  const area=document.getElementById('result-content');
+
+  if(topResults.length===0){
+    const allFlatBR=Math.max(...[...expandItems(hoses,10),...expandItems(cables,10)].map(x=>x.usedBR),0);
+    area.innerHTML=`<div class="alert alert-err">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div><strong>No suitable chain found.</strong> The required minimum bend radius is <strong>${allFlatBR.toFixed(0)} mm</strong>.
+      Check that your chain data includes chains with BR ≥ ${allFlatBR.toFixed(0)} mm, or reduce element ODs / adjust fill limits.</div>
+    </div>`;
+    return;
+  }
+
+  const best=topResults[selectedRankIdx];
+  const ch=best.chain;
+  const fill=best.fillPct;
+  const fillClass=fill>fillWarn?'warn':'';
+  const chainLengthEst=travel>0?(travel*1.05).toFixed(0)+' mm':'—';
+
+  const rankCards=topResults.map((r,i)=>{
+    const fp=r.fillPct.toFixed(1);
+    return `<div class="rank-card rank-${i+1} ${i===selectedRankIdx?'selected':''}" onclick="selectRank(${i})">
+      <div class="rank-badge">${i===0?'★ Best fit':'Option '+(i+1)}</div>
+      <div class="rank-series">${r.chain.series}</div>
+      <div class="rank-dims">${r.chain.iw} × ${r.chain.ih} mm &nbsp;·&nbsp; BR ${r.chain.br} mm</div>
+      <div class="rank-fill" style="color:${fp>fillWarn?'var(--warn)':'var(--success)'}">Fill: ${fp}%</div>
+    </div>`;
+  }).join('');
+
+  // Element BR table rows
+  const allElsBR=[...hoses,...cables].map(el=>{
+    const used=effectiveBR(el);
+    const exceeds=used>ch.br;
+    return `<tr ${exceeds?'class="br-warn-row"':''}>
+      <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${el.color}"></span></td>
+      <td>${el.name}</td>
+      <td>${el.type==='hose'?'Hose':'Cable'}</td>
+      <td>${el.od} mm</td>
+      <td><span class="badge ${el.brStatus==='Known'?'badge-known':'badge-unknown'}">${el.brStatus}</span></td>
+      <td style="font-weight:500">${used.toFixed(0)} mm${el.brStatus==='Unknown'?' <span style="font-size:10px;color:var(--text3)">(10×OD)</span>':''}</td>
+      ${exceeds?'<td style="color:var(--danger);font-size:11px">⚠ Exceeds chain BR</td>':'<td style="color:var(--success);font-size:11px">✓ OK</td>'}
+    </tr>`;
+  }).join('');
+
+  area.innerHTML=`
+  <div class="card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem">
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:4px">Recommended series</div>
+        <div class="result-chain-name">${ch.series}</div>
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="dimtag">${ch.iw} × ${ch.ih} mm cavity</span>
+          <span class="dimtag">BR ${ch.br} mm</span>
+          <span class="dimtag">Required BR ≥ ${best.maxElementBR.toFixed(0)} mm</span>
+          ${ch.url?`<a href="${ch.url}" class="igus-link" target="_blank">IGUS product page ↗</a>`:''}
+        </div>
+      </div>
+      <span class="status-pill ${fill>fillWarn?'status-warn':'status-ok'}">${fill>fillWarn?'⚠ High fill':'✓ Within limits'}</span>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card"><div class="metric-val">${ch.iw} mm</div><div class="metric-lbl">Inner width</div></div>
+      <div class="metric-card"><div class="metric-val">${ch.ih} mm</div><div class="metric-lbl">Inner height</div></div>
+      <div class="metric-card"><div class="metric-val">${ch.br} mm</div><div class="metric-lbl">Chain BR</div></div>
+      <div class="metric-card"><div class="metric-val">${chainLengthEst}</div><div class="metric-lbl">Est. chain length</div></div>
+    </div>
+    <div class="fill-bar-wrap">
+      <div class="fill-bar-label"><span>Fill ratio (cable core area ÷ chain cavity area)</span><strong style="color:${fill>fillWarn?'var(--warn)':'var(--success)'}">${fill.toFixed(1)}%</strong></div>
+      <div class="fill-bar-bg"><div class="fill-bar-fg ${fillClass}" style="width:${Math.min(fill,100).toFixed(1)}%"></div></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">Recommended max: ${fillWarn}% &nbsp;|&nbsp; Absolute max: ${fillMax}%</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9"/></svg>Bend radius check — all elements</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:5px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left"></th>
+          <th style="padding:5px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left">Name</th>
+          <th style="padding:5px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left">Type</th>
+          <th style="padding:5px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left">OD</th>
+          <th style="padding:5px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left">BR status</th>
+          <th style="padding:5px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left">Used BR</th>
+          <th style="padding:5px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);text-align:left">vs chain BR ${ch.br} mm</th>
+        </tr></thead>
+        <tbody>${allElsBR}</tbody>
+      </table>
+    </div>
+  </div>
+
+  ${topResults.length>1?`<div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Top ${topResults.length} options — click to compare</div>
+    <div class="top3-grid">${rankCards}</div>
+  </div>`:''}
+
+  <div class="card" id="bom-card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Bill of materials</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:1rem">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:6px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)">Item</th>
+          <th style="padding:6px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);width:60px">Qty</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:6px;border-bottom:1px solid var(--border)">Selected E-Chain — ${ch.series}</td><td style="padding:6px;text-align:right;border-bottom:1px solid var(--border)">1</td></tr>
+          <tr><td style="padding:6px;border-bottom:1px solid var(--border)">Fixed end bracket</td><td style="padding:6px;text-align:right;border-bottom:1px solid var(--border)">1</td></tr>
+          <tr><td style="padding:6px;border-bottom:1px solid var(--border)">Moving end bracket</td><td style="padding:6px;text-align:right;border-bottom:1px solid var(--border)">1</td></tr>
+          <tr><td style="padding:6px">Divider / separator</td><td style="padding:6px;text-align:right">1</td></tr>
+        </tbody>
+      </table>
+      <div class="section-label">Cable / hose summary</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:6px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)">Element</th>
+          <th style="padding:6px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)">Type</th>
+          <th style="padding:6px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)">OD</th>
+          <th style="padding:6px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);width:60px">Qty</th>
+        </tr></thead>
+        <tbody>${[...hoses,...cables].map((el,i,arr)=>`<tr ${i===arr.length-1?'':'style="border-bottom:1px solid var(--border)"'}>
+          <td style="padding:6px">${el.name}</td>
+          <td style="padding:6px">${el.type==='hose'?'Pneumatic hose':'Electrical cable'}</td>
+          <td style="padding:6px;text-align:right">${el.od} mm</td>
+          <td style="padding:6px;text-align:right">${el.qty}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>Cross-section layout</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Hoses left of divider · cables right · outer dashed ring = annular clearance · dimension lines show cavity size</div>
+    <div class="canvas-controls">
+      <button onclick="changeZoom(0.25)">＋ Zoom in</button>
+      <button onclick="changeZoom(-0.25)">－ Zoom out</button>
+      <button id="pan-btn" onclick="togglePanMode()">✋ Pan</button>
+      <button onclick="resetZoom()">Reset</button>
+      <span class="zoom-label" id="zoom-label">100%</span>
+      <span style="font-size:11px;color:var(--text3);margin-left:6px">Drag to zoom into a box (MATLAB-style) · scroll to zoom · Pan to drag around · double-click or right-click to reset</span>
+      <button onclick="exportCanvas()" style="margin-left:auto">⬇ Export PNG</button>
+    </div>
+    <div class="canvas-wrap" id="canvas-wrap"><canvas id="xsCanvas" style="cursor:crosshair"></canvas></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1B5C9E"></div> Hose core</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(27,92,158,0.25);border:1.5px dashed #1B5C9E"></div> Hose gap ring</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#B85C00"></div> Cable core</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(184,92,0,0.25);border:1.5px dashed #B85C00"></div> Cable gap ring</div>
+      <div class="legend-item"><div style="width:8px;height:14px;background:#3A362E;border:1px solid #1A1916;display:inline-block;vertical-align:middle"></div>&nbsp;Separator (3mm web, 8mm foot)</div>
+    </div>
+  </div>
+
+  <div class="flex between" style="flex-wrap:wrap;gap:8px;margin-top:.5rem">
+    <button class="btn-secondary" onclick="goTo('chains')">← Back</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-secondary" onclick="exportSummary()">⬇ Export text report</button>
+      <button class="btn-primary" onclick="exportPDF()">⬇ Export PDF report</button>
+    </div>
+  </div>`;
+
+  setTimeout(()=>{attachCanvasZoomHandlers();drawCanvas();},60);
+}
+
+function selectRank(idx){selectedRankIdx=idx;zoom=1.0;renderResult();}
+function changeZoom(d){
+  const wrap=document.getElementById('canvas-wrap');
+  const oldZoom=zoom;
+  zoom=Math.max(0.4,Math.min(12,zoom+d));
+  const ratio=zoom/oldZoom;
+  document.getElementById('zoom-label').textContent=Math.round(zoom*100)+'%';
+  drawCanvas();
+  if(wrap){
+    // keep the centre of the current view centred after rescale
+    const cx=wrap.scrollLeft+wrap.clientWidth/2, cy=wrap.scrollTop+wrap.clientHeight/2;
+    wrap.scrollLeft=cx*ratio-wrap.clientWidth/2;
+    wrap.scrollTop=cy*ratio-wrap.clientHeight/2;
+  }
+}
+function resetZoom(){
+  zoom=1.0;
+  document.getElementById('zoom-label').textContent='100%';
+  drawCanvas();
+  const wrap=document.getElementById('canvas-wrap');
+  if(wrap){wrap.scrollLeft=0;wrap.scrollTop=0;}
+}
+
+/* ═══ ZOOM WINDOW (MATLAB-style click-drag zoom) + PAN-DRAG ═══ */
+let panMode=false, panDragging=false, panStartScrollL=0, panStartScrollT=0, panStartClientX=0, panStartClientY=0;
+
+function togglePanMode(){
+  panMode=!panMode;
+  const btn=document.getElementById('pan-btn');
+  const canvas=document.getElementById('xsCanvas');
+  if(btn)btn.classList.toggle('active',panMode);
+  if(canvas)canvas.style.cursor=panMode?'grab':'crosshair';
+}
+
+function canvasMouseDown(e){
+  if(e.button!==0)return; // left click only
+  const canvas=document.getElementById('xsCanvas');if(!canvas)return;
+  const wrap=document.getElementById('canvas-wrap');
+  if(panMode){
+    panDragging=true;
+    panStartScrollL=wrap.scrollLeft; panStartScrollT=wrap.scrollTop;
+    panStartClientX=e.clientX; panStartClientY=e.clientY;
+    canvas.style.cursor='grabbing';
+    e.preventDefault();
+    return;
+  }
+  const rect=canvas.getBoundingClientRect();
+  // canvas.style.width/height is set 1:1 with canvas.width/height, so no scale correction needed
+  rbSelecting=true;
+  rbStartX=e.clientX-rect.left; rbStartY=e.clientY-rect.top;
+  rbEndX=rbStartX; rbEndY=rbStartY;
+  e.preventDefault();
+}
+function canvasMouseMove(e){
+  const wrap=document.getElementById('canvas-wrap');
+  if(panDragging){
+    wrap.scrollLeft=panStartScrollL-(e.clientX-panStartClientX);
+    wrap.scrollTop=panStartScrollT-(e.clientY-panStartClientY);
+    return;
+  }
+  if(!rbSelecting)return;
+  const canvas=document.getElementById('xsCanvas');if(!canvas)return;
+  const rect=canvas.getBoundingClientRect();
+  rbEndX=e.clientX-rect.left; rbEndY=e.clientY-rect.top;
+  drawCanvas();
+}
+function canvasMouseUp(e){
+  if(panDragging){
+    panDragging=false;
+    const canvas=document.getElementById('xsCanvas');
+    if(canvas)canvas.style.cursor='grab';
+    return;
+  }
+  if(!rbSelecting)return;
+  rbSelecting=false;
+  const canvas=document.getElementById('xsCanvas');if(!canvas){drawCanvas();return;}
+  const wrap=document.getElementById('canvas-wrap');
+  const dragW=Math.abs(rbEndX-rbStartX), dragH=Math.abs(rbEndY-rbStartY);
+  if(dragW<8||dragH<8){drawCanvas();return;} // treat as a click, not a drag — ignore tiny boxes
+
+  // Selection box centre in current canvas pixel space (before rescale)
+  const selCentreX=Math.min(rbStartX,rbEndX)+dragW/2;
+  const selCentreY=Math.min(rbStartY,rbEndY)+dragH/2;
+
+  // Zoom factor needed to make the selection roughly fill the visible wrap area
+  const factor=Math.min(wrap.clientWidth/dragW, wrap.clientHeight/dragH);
+  const newZoom=Math.max(0.4,Math.min(12,zoom*factor));
+  const ratio=newZoom/zoom;
+  zoom=newZoom;
+
+  document.getElementById('zoom-label').textContent=Math.round(zoom*100)+'%';
+  drawCanvas();
+
+  // Centre the view on the (rescaled) selection centre point
+  wrap.scrollLeft=selCentreX*ratio-wrap.clientWidth/2;
+  wrap.scrollTop=selCentreY*ratio-wrap.clientHeight/2;
+}
+function canvasMouseLeave(e){
+  if(rbSelecting){rbSelecting=false;drawCanvas();}
+  if(panDragging){panDragging=false;const canvas=document.getElementById('xsCanvas');if(canvas)canvas.style.cursor='grab';}
+}
+function canvasDoubleClick(e){
+  resetZoom();
+}
+function canvasWheel(e){
+  e.preventDefault();
+  const canvas=document.getElementById('xsCanvas');if(!canvas)return;
+  const wrap=document.getElementById('canvas-wrap');
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top; // point under cursor, in current canvas pixel space
+  const factor=e.deltaY<0?1.15:1/1.15;
+  const newZoom=Math.max(0.4,Math.min(12,zoom*factor));
+  const ratio=newZoom/zoom;
+  zoom=newZoom;
+  document.getElementById('zoom-label').textContent=Math.round(zoom*100)+'%';
+  drawCanvas();
+  // Keep the point under the cursor fixed on screen after rescale
+  const wrapRect=wrap.getBoundingClientRect();
+  const cursorInWrapX=e.clientX-wrapRect.left, cursorInWrapY=e.clientY-wrapRect.top;
+  wrap.scrollLeft=mx*ratio-cursorInWrapX;
+  wrap.scrollTop=my*ratio-cursorInWrapY;
+}
+function attachCanvasZoomHandlers(){
+  const canvas=document.getElementById('xsCanvas');if(!canvas)return;
+  canvas.onmousedown=canvasMouseDown;
+  canvas.onmousemove=canvasMouseMove;
+  canvas.onmouseup=canvasMouseUp;
+  canvas.onmouseleave=canvasMouseLeave;
+  canvas.ondblclick=canvasDoubleClick;
+  canvas.onwheel=canvasWheel;
+  canvas.oncontextmenu=e=>{e.preventDefault();resetZoom();};
+  canvas.style.cursor=panMode?'grab':'crosshair';
+  // also allow releasing a pan-drag even if the mouse leaves the canvas onto the wrap
+  const wrap=document.getElementById('canvas-wrap');
+  if(wrap){
+    wrap.onmouseup=canvasMouseUp;
+    wrap.onmousemove=e=>{if(panDragging)canvasMouseMove(e);};
+  }
+}
+
+/* ═══ CANVAS ═══ */
+function drawCanvas(){
+  const best=topResults[selectedRankIdx];if(!best)return;
+  const canvas=document.getElementById('xsCanvas');if(!canvas)return;
+  const ch=best.chain;
+
+  const ANNOT=50; // space for dimension annotations
+  const BASE=Math.min(520/ch.iw,340/ch.ih,7);
+  const scale=BASE*zoom;
+  const W=ch.iw*scale+ANNOT*2;
+  const H=ch.ih*scale+ANNOT*2;
+  canvas.width=W;canvas.height=H;
+  canvas.style.width=W+'px';
+  canvas.style.height=H+'px';
+
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const oX=ANNOT,oY=ANNOT;
+
+  // ── Chain cavity box ──
+  ctx.save();
+  ctx.fillStyle='#F9F8F5';
+  ctx.strokeStyle='#2A2720';
+  ctx.lineWidth=2.5;
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(oX,oY,ch.iw*scale,ch.ih*scale,3);
+  else ctx.rect(oX,oY,ch.iw*scale,ch.ih*scale);
+  ctx.fill();ctx.stroke();
+  ctx.restore();
+
+  // ── Width dimension line (top) ──
+  const dimY=oY-22;
+  drawDimLine(ctx, oX, dimY, oX+ch.iw*scale, dimY, ch.iw+' mm (Bi)', '#1B4F8A');
+
+  // ── Height dimension line (left) ──
+  const dimX=oX-28;
+  drawDimLineV(ctx, dimX, oY, dimX, oY+ch.ih*scale, ch.ih+' mm (Hi)', '#1B4F8A');
+
+  // ── Centre divider (T-profile separator, true to scale, per updated spec) ──
+  const midX=oX+(ch.iw/2)*scale;
+  const SEP_WEB_MM=3;        // web width (the rest, below the foot)
+  const SEP_FOOT_MM=8;       // foot length (width) at TOP only
+  const SEP_FOOT_H_MM=2;     // foot thickness (depth)
+  const SEP_CLEAR_MM=SEPARATOR_CLEAR_MM; // widest point of the separator — packing clears this fully
+  const sepWebW=SEP_WEB_MM*scale;
+  const sepFootW=SEP_FOOT_MM*scale;
+  const sepFootH=SEP_FOOT_H_MM*scale;
+  const sepClearW=SEP_CLEAR_MM*scale;
+  const sepTop=oY;
+  const sepBottom=oY+ch.ih*scale; // web height = chain height - 2mm (i.e. chain height minus the foot thickness)
+
+  ctx.save();
+  ctx.fillStyle='#3A362E';
+  ctx.strokeStyle='#1A1916';
+  ctx.lineWidth=1;
+  // Foot (wide cap at TOP only, 8mm long, 2mm thick)
+  ctx.beginPath();
+  ctx.rect(midX-sepFootW/2, sepTop, sepFootW, sepFootH);
+  ctx.fill();ctx.stroke();
+  // Vertical web (3mm wide, height = chain height - 2mm, spans from under the foot to the bottom)
+  ctx.beginPath();
+  ctx.rect(midX-sepWebW/2, sepTop+sepFootH, sepWebW, sepBottom-(sepTop+sepFootH));
+  ctx.fill();ctx.stroke();
+  ctx.restore();
+
+  // Separator width label
+  ctx.save();
+  ctx.font='9px "Segoe UI",sans-serif';
+  ctx.textAlign='left';
+  ctx.fillStyle='#5A574F';
+  ctx.fillText(SEP_WEB_MM+'mm', midX+sepWebW/2+4, (sepTop+sepBottom)/2+3);
+  ctx.restore();
+
+  // ── Half-width dimension lines inside chain (measured to the full clearance envelope, not just the web) ──
+  const halfY=oY+ch.ih*scale+10;
+  drawDimLine(ctx, oX, halfY, midX-sepClearW/2, halfY, best.halfW+' mm', '#888', 8);
+  drawDimLine(ctx, midX+sepClearW/2, halfY, oX+ch.iw*scale, halfY, best.halfW+' mm', '#888', 8);
+
+  // ── Zone labels (placed outside the cavity box, below the half-width dims) ──
+  const labelY=halfY+22;
+  ctx.save();
+  ctx.font='bold 11px "Segoe UI",sans-serif';
+  ctx.textAlign='center';
+  ctx.fillStyle='#1B4F8A';
+  ctx.fillText('HOSES',oX+(ch.iw/4)*scale,labelY);
+  ctx.fillStyle='#B45309';
+  ctx.fillText('CABLES',oX+(ch.iw*3/4)*scale,labelY);
+  ctx.restore();
+
+  // ── Draw hoses (left half) ──
+  const halfW=best.halfW;
+  (best.placedHoses||[]).forEach(h=>drawEl(ctx,oX+h.cx*scale,oY+h.cy*scale,h,scale,'hose'));
+
+  // ── Draw cables (right half, offset past the full separator clearance envelope) ──
+  const cableOffsetMM=halfW+SEP_CLEAR_MM;
+  (best.placedCables||[]).forEach(c=>drawEl(ctx,oX+(cableOffsetMM+c.cx)*scale,oY+c.cy*scale,c,scale,'cable'));
+
+  // ── Rubber-band zoom selection overlay ──
+  if(rbSelecting){
+    const x=Math.min(rbStartX,rbEndX), y=Math.min(rbStartY,rbEndY);
+    const w=Math.abs(rbEndX-rbStartX), h=Math.abs(rbEndY-rbStartY);
+    ctx.save();
+    ctx.strokeStyle='#1B4F8A';
+    ctx.fillStyle='rgba(27,79,138,0.12)';
+    ctx.lineWidth=1.25;
+    ctx.setLineDash([5,4]);
+    ctx.fillRect(x,y,w,h);
+    ctx.strokeRect(x,y,w,h);
+    ctx.restore();
+  }
+}
+
+function drawDimLine(ctx,x1,y1,x2,y2,label,color,arrowLen){
+  arrowLen=arrowLen||10;
+  ctx.save();
+  ctx.strokeStyle=color||'#1B4F8A';
+  ctx.fillStyle=color||'#1B4F8A';
+  ctx.lineWidth=1;
+  // Main line
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  // End ticks
+  ctx.beginPath();ctx.moveTo(x1,y1-arrowLen/2);ctx.lineTo(x1,y1+arrowLen/2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x2,y2-arrowLen/2);ctx.lineTo(x2,y2+arrowLen/2);ctx.stroke();
+  // Arrowheads
+  drawArrowHead(ctx,x2,y2,0,color);
+  drawArrowHead(ctx,x1,y1,Math.PI,color);
+  // Label
+  ctx.font='bold 11px "Segoe UI",sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='bottom';
+  const mx=(x1+x2)/2;
+  ctx.fillStyle='#fff';
+  const tw=ctx.measureText(label).width;
+  ctx.fillRect(mx-tw/2-3,y1-16,tw+6,14);
+  ctx.fillStyle=color||'#1B4F8A';
+  ctx.fillText(label,mx,y1-3);
+  ctx.restore();
+}
+
+function drawDimLineV(ctx,x1,y1,x2,y2,label,color){
+  ctx.save();
+  ctx.strokeStyle=color||'#1B4F8A';
+  ctx.fillStyle=color||'#1B4F8A';
+  ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x1-5,y1);ctx.lineTo(x1+5,y1);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x2-5,y2);ctx.lineTo(x2+5,y2);ctx.stroke();
+  drawArrowHead(ctx,x2,y2,Math.PI/2,color);
+  drawArrowHead(ctx,x1,y1,-Math.PI/2,color);
+  const my=(y1+y2)/2;
+  ctx.save();
+  ctx.translate(x1-6,my);
+  ctx.rotate(-Math.PI/2);
+  ctx.font='bold 11px "Segoe UI",sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='bottom';
+  const tw=ctx.measureText(label).width;
+  ctx.fillStyle='#fff';
+  ctx.fillRect(-tw/2-3,-14,tw+6,14);
+  ctx.fillStyle=color||'#1B4F8A';
+  ctx.fillText(label,0,-2);
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawArrowHead(ctx,x,y,angle,color){
+  ctx.save();
+  ctx.translate(x,y);ctx.rotate(angle);
+  ctx.fillStyle=color||'#1B4F8A';
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-7,3);ctx.lineTo(-7,-3);ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+
+function drawEl(ctx,px,py,el,scale,type){
+  const rEff=(el.effOD/2)*scale;
+  const rCore=(el.od/2)*scale;
+  const isHose=type==='hose';
+
+  // Gap ring
+  ctx.save();
+  ctx.beginPath();ctx.arc(px,py,rEff,0,Math.PI*2);
+  ctx.fillStyle=isHose?'rgba(27,92,158,0.09)':'rgba(184,92,0,0.09)';
+  ctx.fill();
+  ctx.setLineDash([3,3]);
+  ctx.strokeStyle=isHose?'#7AAED8':'#D4965A';
+  ctx.lineWidth=1;ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Core
+  ctx.save();
+  ctx.beginPath();ctx.arc(px,py,rCore,0,Math.PI*2);
+  ctx.fillStyle=el.color||(isHose?'#1B5C9E':'#B85C00');
+  ctx.fill();
+  ctx.strokeStyle=isHose?'#0D3A6E':'#6B3300';
+  ctx.lineWidth=1.2;ctx.stroke();
+  ctx.restore();
+
+  // Labels — name on top line, OD on bottom line
+  if(rCore>9){
+    ctx.save();
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(255,255,255,0.95)';
+    const nameFontSize=Math.max(7,Math.min(11,rCore*0.42));
+    const odFontSize=Math.max(7,Math.min(10,rCore*0.36));
+    const shortName=el.name.length>10?el.name.slice(0,9)+'…':el.name;
+    if(rCore>18){
+      // Two lines: name + OD
+      ctx.font=`bold ${nameFontSize}px 'Segoe UI',sans-serif`;
+      ctx.fillText(shortName,px,py-odFontSize*0.6);
+      ctx.font=`${odFontSize}px 'Consolas',monospace`;
+      ctx.fillStyle='rgba(255,255,255,0.75)';
+      ctx.fillText('Ø'+el.od+' mm',px,py+nameFontSize*0.7);
+    } else {
+      // Single line: OD only
+      ctx.font=`bold ${odFontSize}px 'Consolas',monospace`;
+      ctx.fillText('Ø'+el.od,px,py);
+    }
+    ctx.restore();
+  }
+
+  // Eff OD label outside ring (only if space)
+  if(rEff>rCore+6 && rEff>14){
+    ctx.save();
+    ctx.font=`9px 'Segoe UI',sans-serif`;
+    ctx.fillStyle=isHose?'#1B4F8A':'#8A4A00';
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText('Ø'+el.effOD.toFixed(1),px,py+rEff+2);
+    ctx.restore();
+  }
+}
+
+function exportCanvas(){
+  const canvas=document.getElementById('xsCanvas');
+  const a=document.createElement('a');
+  const proj=document.getElementById('projectName').value||'echain';
+  a.download=proj.replace(/\s+/g,'_')+'_cross_section.png';
+  a.href=canvas.toDataURL('image/png');a.click();
+}
+
+function exportPDF(){
+  if(topResults.length===0)return;
+  const best=topResults[selectedRankIdx];const ch=best.chain;
+  const proj=document.getElementById('projectName').value||'E-Chain Project';
+  const customer=document.getElementById('projectCustomer').value||'—';
+  const machine=document.getElementById('projectMachine').value||'—';
+  const engineer=document.getElementById('projectEngineer').value||'—';
+  const dateVal=document.getElementById('projectDate').value;
+  const dateStr=dateVal?new Date(dateVal+'T00:00:00').toLocaleDateString():new Date().toLocaleDateString();
+  const canvas=document.getElementById('xsCanvas');
+  const imgData=canvas?canvas.toDataURL('image/png'):'';
+
+  const elRows=(arr,label)=>arr.map(el=>`<tr><td>${el.name}</td><td>${label}</td><td style="text-align:right">${el.od} mm</td><td style="text-align:right">${el.qty}</td><td style="text-align:right">${effectiveBR(el).toFixed(0)} mm</td></tr>`).join('');
+  const rankRows=topResults.map((r,i)=>`<tr><td>${i===0?'★ 1':i+1}</td><td>${r.chain.series}</td><td style="text-align:right">${r.chain.iw} × ${r.chain.ih} mm</td><td style="text-align:right">${r.chain.br} mm</td><td style="text-align:right">${r.fillPct.toFixed(1)}%</td></tr>`).join('');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${proj} — E-Chain Report</title>
+  <style>
+    body{font-family:'Segoe UI',system-ui,sans-serif;color:#1A1916;padding:32px;font-size:13px;line-height:1.5}
+    h1{font-size:20px;margin-bottom:2px}
+    h2{font-size:14px;margin:20px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}
+    table{width:100%;border-collapse:collapse;margin-bottom:10px}
+    th,td{padding:5px 8px;border-bottom:1px solid #ddd;text-align:left;font-size:12px}
+    th{background:#F7F6F2;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#5A574F}
+    .meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;font-size:12px;margin-bottom:14px;color:#333}
+    .chainname{font-size:22px;font-weight:700;color:#1B4F8A}
+    img{max-width:100%;border:1px solid #ddd;border-radius:6px;margin:8px 0}
+    @media print{body{padding:12px}}
+  </style></head><body>
+    <h1>IGUS E-Chain Selection Report</h1>
+    <div class="meta">
+      <div><strong>Project:</strong> ${proj}</div>
+      <div><strong>Date:</strong> ${dateStr}</div>
+      <div><strong>Customer:</strong> ${customer}</div>
+      <div><strong>Machine:</strong> ${machine}</div>
+      <div><strong>Engineer:</strong> ${engineer}</div>
+    </div>
+
+    <h2>Recommended chain</h2>
+    <div class="chainname">${ch.series}</div>
+    <table>
+      <tr><th>Inner width</th><th>Inner height</th><th>Chain bend radius</th><th>Required BR</th><th>Fill ratio</th></tr>
+      <tr><td>${ch.iw} mm</td><td>${ch.ih} mm</td><td>${ch.br} mm</td><td>${best.maxElementBR.toFixed(0)} mm</td><td>${best.fillPct.toFixed(1)}%</td></tr>
+    </table>
+
+    <h2>Cross-section layout</h2>
+    ${imgData?`<img src="${imgData}">`:'<em>No layout generated.</em>'}
+
+    <h2>Cable &amp; hose list</h2>
+    <table>
+      <tr><th>Name</th><th>Type</th><th>OD</th><th>Qty</th><th>Used BR</th></tr>
+      ${elRows(hoses,'Pneumatic hose')}${elRows(cables,'Electrical cable')}
+    </table>
+
+    <h2>Top ${topResults.length} chain options</h2>
+    <table>
+      <tr><th>Rank</th><th>Chain</th><th>Cavity</th><th>Bend radius</th><th>Fill</th></tr>
+      ${rankRows}
+    </table>
+
+    <h2>Bill of materials</h2>
+    <table>
+      <tr><th>Item</th><th style="text-align:right">Qty</th></tr>
+      <tr><td>Selected E-Chain — ${ch.series}</td><td style="text-align:right">1</td></tr>
+      <tr><td>Fixed end bracket</td><td style="text-align:right">1</td></tr>
+      <tr><td>Moving end bracket</td><td style="text-align:right">1</td></tr>
+      <tr><td>Divider / separator</td><td style="text-align:right">1</td></tr>
+    </table>
+
+    <p style="margin-top:24px;font-size:11px;color:#999">Generated by IGUS E-Chain Selection Assistant</p>
+    <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+
+  const w=window.open('','_blank');
+  w.document.open();w.document.write(html);w.document.close();
+}
+
+/* ═══ SAVE / LOAD ═══ */
+function saveProject(){
+  const data={
+    version:2,
+    projectName:document.getElementById('projectName').value,
+    projectCustomer:document.getElementById('projectCustomer').value,
+    projectMachine:document.getElementById('projectMachine').value,
+    projectEngineer:document.getElementById('projectEngineer').value,
+    projectDate:document.getElementById('projectDate').value,
+    hoses,cables,chains,seriesPrefOrder,
+    settings:{
+      hoseGap:document.getElementById('hoseGap').value,
+      cableGap:document.getElementById('cableGap').value,
+      fillWarn:document.getElementById('fillWarn').value,
+      fillMax:document.getElementById('fillMax').value,
+      travel:document.getElementById('travel').value,
+      preferNarrow:document.getElementById('preferNarrow')?.checked||false
+    }
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  const proj=data.projectName||'echain_project';
+  a.download=proj.replace(/\s+/g,'_')+'.json';
+  a.href=URL.createObjectURL(blob);a.click();dirty=false;
+}
+function loadProject(){
+  const input=document.createElement('input');
+  input.type='file';input.accept='.json';
+  input.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const data=JSON.parse(ev.target.result);
+        document.getElementById('projectName').value=data.projectName||'';
+        document.getElementById('projectCustomer').value=data.projectCustomer||'';
+        document.getElementById('projectMachine').value=data.projectMachine||'';
+        document.getElementById('projectEngineer').value=data.projectEngineer||'';
+        document.getElementById('projectDate').value=data.projectDate||'';
+        hoses=data.hoses||[];cables=data.cables||[];chains=data.chains||[];
+        seriesPrefOrder=data.seriesPrefOrder||[];
+        elId=Math.max(...[...hoses,...cables].map(x=>x.id||0),0);
+        if(data.settings){
+          document.getElementById('hoseGap').value=data.settings.hoseGap||10;
+          document.getElementById('cableGap').value=data.settings.cableGap||10;
+          document.getElementById('fillWarn').value=data.settings.fillWarn||60;
+          document.getElementById('fillMax').value=data.settings.fillMax||80;
+          document.getElementById('travel').value=data.settings.travel||'';
+          document.getElementById('preferNarrow').checked=data.settings.preferNarrow||false;
+        }
+        if(chains.length>0){renderChainPreview();buildSeriesPreference();}
+        renderTables();goTo('elements');dirty=false;
+      }catch(err){alert('Could not read project file: '+err.message);}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+function exportSummary(){
+  if(topResults.length===0)return;
+  const best=topResults[selectedRankIdx];const ch=best.chain;
+  const proj=document.getElementById('projectName').value||'E-Chain Project';
+  const lines=[
+    'IGUS E-CHAIN SELECTION REPORT','='.repeat(40),
+    `Project: ${proj}`,`Date: ${new Date().toLocaleDateString()}`,'',
+    `RECOMMENDED CHAIN: ${ch.series}`,
+    `  Inner width:        ${ch.iw} mm`,`  Inner height:       ${ch.ih} mm`,
+    `  Chain bend radius:  ${ch.br} mm`,`  Required BR (elements): ${best.maxElementBR.toFixed(0)} mm`,
+    `  Fill ratio:         ${best.fillPct.toFixed(1)}%`,'',
+    'ELEMENT BEND RADII',
+    ...[...hoses,...cables].map(el=>`  ${el.name}: OD=${el.od}mm  BR-status=${el.brStatus}  Used-BR=${effectiveBR(el).toFixed(0)}mm`),
+    '','PNEUMATIC HOSES',
+    ...hoses.map(h=>`  ${h.name}: ${h.qty}× Ø${h.od}mm  BR=${effectiveBR(h).toFixed(0)}mm`),
+    '','ELECTRICAL CABLES',
+    ...cables.map(c=>`  ${c.name}: ${c.qty}× Ø${c.od}mm  BR=${effectiveBR(c).toFixed(0)}mm`),
+    '','ALL OPTIONS',
+    ...topResults.map((r,i)=>`  ${i+1}. ${r.chain.series} (${r.chain.iw}×${r.chain.ih}mm, BR ${r.chain.br}mm, fill ${r.fillPct.toFixed(1)}%)`),
+    '','Generated by IGUS E-Chain Selector'
+  ];
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.download=proj.replace(/\s+/g,'_')+'_report.txt';
+  a.href=URL.createObjectURL(blob);a.click();
+}
+
+/* ═══ INIT ═══ */
+document.getElementById('projectDate').value=new Date().toISOString().slice(0,10);
+addEl('hose');addEl('cable');
+</script>
+</body>
+</html>
