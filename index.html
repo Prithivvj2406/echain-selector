@@ -1083,8 +1083,8 @@ function drawCanvas(){
 
   // ── Centre divider (T-profile separator, true to scale, per updated spec) ──
   const midX=oX+(ch.iw/2)*scale;
-  const SEP_WEB_MM=3;        // web width (the rest, below the foot)
-  const SEP_FOOT_MM=8;       // foot length (width) at TOP only
+  const SEP_WEB_MM=SEPARATOR_WEB_MM;     // web width (the rest, below the foot)
+  const SEP_FOOT_MM=SEPARATOR_FOOT_LEN_MM; // foot length (width) at TOP only
   const SEP_FOOT_H_MM=2;     // foot thickness (depth)
   const SEP_CLEAR_MM=SEPARATOR_CLEAR_MM; // widest point of the separator — packing clears this fully
   const sepWebW=SEP_WEB_MM*scale;
